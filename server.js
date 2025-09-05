@@ -3,10 +3,11 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
+const assetRoutes = require("./routes/assetRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const assetsRoute = require("./routes/assets");
+
 
 
 // Middleware
@@ -15,7 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/users', userRoutes);
-app.use("/api/assets", assetsRoute);
+app.use("/api/assets", assetRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
