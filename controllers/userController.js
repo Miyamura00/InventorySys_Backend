@@ -5,9 +5,9 @@ const { db, USER_COLLECTION } = require('../config/firebase');
 
 const registerUser = async (req, res) =>{
     try{
-        const {name, email, password, designation } = req.body
+        const {name, email, password, designation, department } = req.body
 
-        if(!name || !email || !password || !designation){
+        if(!name || !email || !password || !designation || !department){
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
@@ -36,6 +36,14 @@ const registerUser = async (req, res) =>{
                  message: "Invalid designation"
              })
          }
+
+         const validDepartments = ['HR', 'IT', 'Finance', 'Sales']
+         if(!validDepartments.includes(department)){
+             return res.status(400).json({
+                    success: false,
+                    message: "Invalid department"
+             })
+         }
         
          const userRef = collection(db, USER_COLLECTION)
          const q = query(userRef, where('email', '==', email.toLowerCase().trim()))
@@ -56,6 +64,7 @@ const registerUser = async (req, res) =>{
             email: email.toLowerCase().trim(),
             password: hashedPassword,
             designation,
+            department,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
          }
