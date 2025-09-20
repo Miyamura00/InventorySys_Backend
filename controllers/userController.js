@@ -198,9 +198,47 @@ const getUserById = async (req, res) =>{
     }
 }
 
+        const updateUser = async (req, res) => {
+            try{
+                const {id} = req.params
+                const updates = req.body
+
+                if(updates.password) delete updates.password
+
+                const docRef = doc(db, USER_COLLECTION, id)
+                const docSnap = await getDoc(docRef)
+
+                if(!docSnap.exists()){
+                    return res.status(404).json({
+                        success: false,
+                        message: 'User not found'
+                    })
+                }
+                
+                updates.updateAt = new Date().toISOString()
+
+                await updateDoc(docRef, updates)
+
+                res.json({
+                    success:true,
+                    message:'User updated successfully',
+                    user:{id, ...updates}
+                })
+            }   catch(error){
+                console.error('Error updating user:', error)
+                res.status(500).json({
+                    success:false,
+                    message:'Error updating user'
+                })
+            }
+
+            console.log("Update request for:", id, updates);
+        }
+
 module.exports = {
     registerUser,
     loginUser,
     getAllUsers,
-    getUserById
+    getUserById,
+    updateUser
 }
