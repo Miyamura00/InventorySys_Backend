@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const { v4:uuidv4 } = require('uuid');
-const { collection, addDoc, doc, getDoc, getDocs, query, where } = require('firebase/firestore')
+const { collection, addDoc, doc, getDoc, getDocs, query, where, updateDoc } = require('firebase/firestore')
 const { db, USER_COLLECTION } = require('../config/firebase');
 
 const registerUser = async (req, res) =>{
@@ -199,41 +199,47 @@ const getUserById = async (req, res) =>{
 }
 
         const updateUser = async (req, res) => {
-            try{
-                const {id} = req.params
-                const updates = req.body
+  try {
+    const { id } = req.params;
+    const updates = req.body;
 
-                if(updates.password) delete updates.password
+    console.log("🟢 Incoming update request:", id, updates);
 
-                const docRef = doc(db, USER_COLLECTION, id)
-                const docSnap = await getDoc(docRef)
+    const docRef = doc(db, USER_COLLECTION, id);
+    const docSnap = await getDoc(docRef);
 
-                if(!docSnap.exists()){
-                    return res.status(404).json({
-                        success: false,
-                        message: 'User not found'
-                    })
-                }
-                
-                updates.updateAt = new Date().toISOString()
+    if (!docSnap.exists()) {
+      console.log("🔴 User not found in Firestore:", id);
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-                await updateDoc(docRef, updates)
+    // remove empty fields
+    Object.keys(updates).forEach((key) => {
+      if (updates[key] === "" || updates[key] === null || updates[key] === undefined) {
+        delete updates[key];
+      }
+    });
 
-                res.json({
-                    success:true,
-                    message:'User updated successfully',
-                    user:{id, ...updates}
-                })
-            }   catch(error){
-                console.error('Error updating user:', error)
-                res.status(500).json({
-                    success:false,
-                    message:'Error updating user'
-                })
-            }
+    // re-hash password only if provided
+    if (updates.password) {
+      const saltRounds = 10;
+      updates.password = await bcrypt.hash(updates.password, saltRounds);
+    }
 
-            console.log("Update request for:", id, updates);
-        }
+    updates.updatedAt = new Date().toISOString();
+
+    await updateDoc(docRef, updates);
+
+    res.json({
+      success: true,
+      message: "User updated successfully",
+      user: { id, ...updates },
+    });
+  } catch (error) {
+    console.error("🔥 Error updating user:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
     registerUser,
